@@ -1,6 +1,6 @@
 #include "DeviceDriver.h"
-#include <unordered_map>
 #include <vector>
+#include <iostream>
 
 DeviceDriver::DeviceDriver(FlashMemoryDevice* hardware) : m_hardware(hardware)
 {
@@ -31,4 +31,31 @@ void DeviceDriver::write(long address, int data)
     }
 
     throw WriteFailException();
+}
+
+Application::Application(DeviceDriver* devicedriver) : m_devicedriver(devicedriver)
+{
+}
+
+void Application::readAndPrint(long startAddr, long endAddr)
+{
+    std::vector<long> data;
+
+    for (long addr = startAddr; addr <= endAddr; addr++) {
+        data.push_back(m_devicedriver->read(addr));
+    }
+
+    for (long value : data) {
+        std::cout << value;
+    }
+    std::cout << "\n";
+}
+
+void Application::writeall(unsigned char data)
+{
+    const long minAddr = 0x00;
+    const long maxAddr = 0x04;
+    for (long addr = minAddr; addr <= maxAddr; addr++) {
+        m_devicedriver->write(addr, data);
+    }
 }
