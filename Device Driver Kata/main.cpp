@@ -3,7 +3,6 @@
 #include "gmock/gmock.h"
 
 using ::testing::Return;
-using ::testing::NiceMock;
 
 class FlashMock : public FlashMemoryDevice {
 public:
@@ -53,6 +52,45 @@ TEST(DD, 데이터가이미있는상태에서Write하는경우WriteFailException
     catch (const WriteFailException& e) {
         EXPECT_STREQ(e.what(), "data is already written");
     }
+}
+
+TEST(APP, 읽고출력) {
+    FlashMock mock;
+    DeviceDriver dd{ &mock };
+    Application app{ &dd };
+
+    const long startAddr = 0x00;
+    const long endAddr = 0x30;
+
+    std::string result = "";
+    for (long addr = startAddr; addr <= endAddr; addr++) {
+        unsigned char pat = rand() % 0xFF;
+        EXPECT_CALL(mock, read(addr))
+            .Times(5)
+            .WillRepeatedly(Return(pat));
+    }
+
+    app.readAndPrint(startAddr, endAddr);
+}
+
+TEST(APP, 모두Write) {
+    FlashMock mock;
+    DeviceDriver dd{ &mock };
+    Application app{ &dd };
+
+    const long startAddr = 0x00;
+    const long endAddr = 0x04;
+
+    unsigned char pat = rand() % 0xFF;
+    for (long addr = startAddr; addr <= endAddr; addr++) {
+        EXPECT_CALL(mock, read(addr))
+            .Times(1)
+            .WillRepeatedly(Return(0xFF));
+        EXPECT_CALL(mock, write(addr, pat))
+            .Times(1);
+    }
+
+    app.writeall(pat);
 }
 
 int main() {
